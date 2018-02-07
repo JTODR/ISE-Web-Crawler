@@ -3,9 +3,11 @@
 import requests
 from bs4 import BeautifulSoup
 import time	
+import plotly
+import plotly.graph_objs as go
+from plotly.graph_objs import Scatter, Layout
 
 ROOT_URL = "http://www.ise.ie"
-
 
 def crawler():
 	page = 1
@@ -34,18 +36,19 @@ def crawler():
 					print(company_title)
 					history_url = ROOT_URL + get_history_href(company_url)
 
-					get_share_price_history_table(history_url)
+					get_share_price_history_table(history_url, company_title)
 
-					time.sleep(3)		# give the program time to breathe...
+					time.sleep(2)		# give the program time to breathe...
 
 			#break
+
 			i += 1
 		page = page + 1
 
 	print("Finished!")
 
 
-def get_share_price_history_table(history_href):
+def get_share_price_history_table(history_href, company_title):
 	source_code = requests.get(history_href)
 	plain_text = source_code.text
 	soup = BeautifulSoup(plain_text, "html.parser")
@@ -61,8 +64,7 @@ def get_share_price_history_table(history_href):
 			date_list.append(row.string)
 
 		elif i % 3 == 1:
-			share_price = row.string
-			share_price = "€" + share_price[:7]
+			share_price = row.string[:7]
 			share_price_list.append(share_price)
 
 		elif i % 3 == 2:
@@ -71,12 +73,48 @@ def get_share_price_history_table(history_href):
 
 		i += 1
 
-	print("DATE\t\tCLOSING PRICE\tMARKET CAPITAL (MIL)")
+	# reverse the lists for plotting as graph
+	date_list =  date_list[::-1]
+	share_price_list = share_price_list[::-1]
+	market_capital_list = market_capital_list[::-1]
+
+	print("DATE\t\tCLOSING PRICE (€)\tMARKET CAPITAL (MIL)")
 
 	for j in range(0, len(date_list[0])):		# print the date, share price and market capital row by row in 3 columns
-		print(date_list[j] + "\t" + share_price_list[j] + "\t" + market_capital_list[j])	
+		print(date_list[j] + "\t" + share_price_list[j] + "\t\t\t" + market_capital_list[j])	
 
 	print()
+
+	# Create a trace  - used to create date for the plot
+	trace = go.Scatter(
+	    x = date_list,
+	    y = share_price_list
+	)
+
+	data = [trace]
+
+	layout = go.Layout(
+    title= company_title,
+    xaxis=dict(
+        title='Date',
+        titlefont=dict(
+            family='Courier New, monospace',
+            size=18,
+            color='#7f7f7f'
+        )
+    ),
+    yaxis=dict(
+        title='Share Price (€)',
+        titlefont=dict(
+            family='Courier New, monospace',
+            size=18,
+            color='#7f7f7f'
+        )
+    )
+	)
+	fig = go.Figure(data=data, layout=layout)
+
+	plotly.offline.plot(fig, filename='share_price_vs_date')
 
 def get_history_href(company_url):
 	source_code = requests.get(company_url)

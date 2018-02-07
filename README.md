@@ -12,4 +12,4 @@ This project uses the following dependencies:
 
 This web crawler will crawl the Irish Stock Exchange (ISE) website getting share price info for each company.
 The historical share price data is pulled from each company's share price web page.
-A graph is (not yet implemented) created of the company's share prices for that historical period. 
+A graph is created of the company's share prices for that historical period. 
