@@ -1,7 +1,8 @@
 # Web Crawler to crawl Irish Stock Exchange share prices over a certain period 
 
 import requests
-from bs4 import BeautifulSoup	
+from bs4 import BeautifulSoup
+import time	
 
 ROOT_URL = "http://www.ise.ie"
 
@@ -28,34 +29,65 @@ def crawler():
 
 				for company in company_link.find_all('a'):
 
-					company_href = ROOT_URL + company.get('href')
+					company_url = ROOT_URL + company.get('href')
 					company_title = company.string
-					print(company_href)
 					print(company_title)
-					history_href = ROOT_URL + get_history_href(company_href)
+					history_url = ROOT_URL + get_history_href(company_url)
 
-					print(history_href)
+					get_share_price_history_table(history_url)
+
+					time.sleep(3)		# give the program time to breathe...
+
 			#break
-
-
 			i += 1
-
 		page = page + 1
 
 	print("Finished!")
 
-def get_history_href(username_url):
-	source_code = requests.get(username_url)
+
+def get_share_price_history_table(history_href):
+	source_code = requests.get(history_href)
+	plain_text = source_code.text
+	soup = BeautifulSoup(plain_text, "html.parser")
+
+	date_list = []
+	share_price_list = []
+	market_capital_list = []
+
+	i = 0
+
+	for row in soup.find_all('td', 'equityName'):
+		if i % 3 == 0:
+			date_list.append(row.string)
+
+		elif i % 3 == 1:
+			share_price = row.string
+			share_price = "€" + share_price[:7]
+			share_price_list.append(share_price)
+
+		elif i % 3 == 2:
+			market_capital = row.string + " MIL"
+			market_capital_list.append(market_capital)
+
+		i += 1
+
+	print("DATE\t\tCLOSING PRICE\tMARKET CAPITAL (MIL)")
+
+	for j in range(0, len(date_list[0])):		# print the date, share price and market capital row by row in 3 columns
+		print(date_list[j] + "\t" + share_price_list[j] + "\t" + market_capital_list[j])	
+
+	print()
+
+def get_history_href(company_url):
+	source_code = requests.get(company_url)
 	plain_text = source_code.text
 	soup = BeautifulSoup(plain_text, "html.parser")
 
 	company_history = soup.find('td', 'legendWidth210 d-lightGreyFont d-fontArial')
-	company_link = company_history.find('a')
+	company_link = company_history.find('a')	# get the href for the "history" page of the company
 	history_href = company_link.get('href')
 
 	return history_href
-
-	
 
 
 def main():
