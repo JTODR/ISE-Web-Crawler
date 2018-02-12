@@ -6,6 +6,7 @@ This project uses the following dependencies:
 
 * requests
 * bs4 (beautiful soup 4)
+* plotly
 
 
 ### Project Description
