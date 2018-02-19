@@ -13,76 +13,46 @@ companies_list = []		# list of company objects
 graph_xaxis_layout = dict(
         title='Date',
         titlefont=dict(
-            family='Courier New, monospace',
-            size=18,
-            color='#7f7f7f'
+        family='Courier New, monospace',
+        size=18,
+        color='#7f7f7f'
         )
     )
 
 graph_yaxis_layout = dict(
         title='Share Price (€)',
         titlefont=dict(
-            family='Courier New, monospace',
-            size=18,
-            color='#7f7f7f'
+        family='Courier New, monospace',
+        size=18,
+        color='#7f7f7f'
         )
     )
 
 class Company:
-	def __init__(self, name, url):
+	def __init__(self, name, url, index):
 		self.name = name
 		self.url = url
+		self.index = index
+		self.history_url = ROOT_URL		# initialise to ROOT URL
 		self.date_list = []
 		self.share_price_list = []
 		self.market_capital_list = []
 
 
 def crawler():
-	page = 1
-	
-	while page <= 1:		# crawl through all the pages we specify
-		url = "http://www.ise.ie/Market-Data-Announcements/Companies/Price-changes/"	# page 1
 
-		if page == 2:
-			url = url + "?ACTIVEGROUP=2&&type=CHANGEPRICE"	# page 2
+	for company in companies_list:
+		get_history_href(company)
 
-		source_code = requests.get(url)		# get the page source
-		plain_text = source_code.text 	
+		get_share_price_history_table(company)		# get info from company's history webpage
 
-		soup = BeautifulSoup(plain_text, "html.parser")		# BS object with html parser
-		
-		i = 0
+		format_graph_data(company)	
+		plot_graph(company)
 
-		for table_row in soup.find_all('td', 'equityName mDataGrid480'):		# class of each company name
-			
-			if (i % 2) == 0:			# every second one is "INSTRUMENT NAME" column on the web page, I dont want that...	
+		time.sleep(2)		# give the program time to breathe...
 
-				for link in table_row.find_all('a'):
-
-					company = Company(link.string, ROOT_URL + link.get('href'))		# create new company object
-
-					print(company.name)
-					history_url = ROOT_URL + get_history_href(company)
-
-					get_share_price_history_table(history_url, company)		# get info from company's history webpage
-
-					companies_list.append(company)		# append to global list of companies
-
-					format_data(company)	
-					plot_graph(company)
-
-					time.sleep(2)		# give the program time to breathe...
-
-			#break
-
-			i += 1
-		page = page + 1
-
-	print("Finished!")
-
-
-def get_share_price_history_table(history_href, company):
-	source_code = requests.get(history_href)
+def get_share_price_history_table(company):
+	source_code = requests.get(company.history_url)
 	plain_text = source_code.text
 	soup = BeautifulSoup(plain_text, "html.parser")
 
@@ -102,7 +72,7 @@ def get_share_price_history_table(history_href, company):
 
 		i += 1
 
-def format_data(company):
+def format_graph_data(company):
 
 	# reverse the lists for plotting as graph
 	company.date_list = company.date_list[::-1]
@@ -139,11 +109,45 @@ def get_history_href(company):
 	company_history = soup.find('td', 'legendWidth210 d-lightGreyFont d-fontArial')
 	company_link = company_history.find('a')	
 	history_href = company_link.get('href')		# get the href for the "history" page of the company
+	company.history_url += history_href
 
-	return history_href
+def get_all_companies():
+	page = 1
+	company_index = 1
 
+	while page <= 2:
+		url = "http://www.ise.ie/Market-Data-Announcements/Companies/Price-changes/"	# page 1
+
+		if page == 2:
+			url = url + "?ACTIVEGROUP=2&&type=CHANGEPRICE"	# page 2
+
+		source_code = requests.get(url)		# get the page source
+		plain_text = source_code.text 	
+
+		soup = BeautifulSoup(plain_text, "html.parser")		# BS object with html parser
+		
+		i = 0
+		for table_row in soup.find_all('td', 'equityName mDataGrid480'):		# class of each company name
+			if (i % 2) == 0:			# every second one is "INSTRUMENT NAME" column on the web page, I dont want that...	
+				for link in table_row.find_all('a'):
+
+					company = Company(link.string, ROOT_URL + link.get('href'), company_index)		# create new company object
+					companies_list.append(company)
+					company_index = company_index + 1
+
+			i = i + 1
+		page = page + 1
+
+def print_company_list():
+	for company in companies_list:
+		if company.index < 10:
+			print(str(company.index) + '  - ' + company.name)
+		else:
+			print(str(company.index) + ' - ' + company.name)
 
 def main():
+	get_all_companies()
+	print_company_list()
 	crawler()
 
 if __name__ == '__main__':
