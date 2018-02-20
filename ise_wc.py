@@ -4,20 +4,21 @@ import requests
 from bs4 import BeautifulSoup
 import time	
 from company import Company
+import sys
 
 ROOT_URL = "http://www.ise.ie"
-companies_list = []		# list of company objects
+companies_list = {}		# list of company objects
 
-def crawler():
+def crawler(index):
 
-	for company in companies_list:
+	#for company in companies_list:
 
-		company.get_history_href()
-		company.get_share_price_history_table()		# get info from company's history webpage
-		company.format_graph_data()	
-		company.plot_graph()
+	companies_list[index].get_history_href()
+	companies_list[index].get_share_price_history_table()		# get info from company's history webpage
+	companies_list[index].format_graph_data()	
+	companies_list[index].plot_graph()
 
-		time.sleep(2)		# give the program time to breathe...
+	time.sleep(2)		# give the program time to breathe...
 
 def get_all_companies():
 	page = 1
@@ -40,23 +41,32 @@ def get_all_companies():
 				for link in table_row.find_all('a'):
 
 					company = Company(link.string, ROOT_URL + link.get('href'), company_index)		# create new company object
-					companies_list.append(company)
+					companies_list[company_index] = company
 					company_index = company_index + 1
 
 			i = i + 1
 		page = page + 1
 
 def print_company_list():
-	for company in companies_list:
-		if company.index < 10:
-			print(str(company.index) + '  - ' + company.name)
+	for key in companies_list:
+		if companies_list[key].index < 10:
+			print(str(companies_list[key].index) + '  - ' + companies_list[key].name)
 		else:
-			print(str(company.index) + ' - ' + company.name)
+			print(str(companies_list[key].index) + ' - ' + companies_list[key].name)
 
 def main():
 	get_all_companies()
 	print_company_list()
-	crawler()
+	while True:
+
+		print("Enter company number between 1-56 inclusive...")
+		user_input = sys.stdin.readline()
+
+		if int(user_input) < 56 and int(user_input) > 0:
+			crawler(int(user_input))
+
+
+	#crawler()
 
 if __name__ == '__main__':
 	main() 
