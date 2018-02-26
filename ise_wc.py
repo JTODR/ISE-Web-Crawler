@@ -3,6 +3,7 @@
 import requests
 from bs4 import BeautifulSoup
 import time	
+import company
 from company import Company
 import sys
 
@@ -11,14 +12,20 @@ companies_list = {}		# list of company objects
 
 def crawler(index):
 
-	#for company in companies_list:
+	if index != -1:
+		companies_list[index].get_history_href()
+		companies_list[index].get_share_price_history_table()		# get info from company's history webpage
+		companies_list[index].format_graph_data()	
+		companies_list[index].plot_graph()
+		time.sleep(2)		# give the program time to breathe...
 
-	companies_list[index].get_history_href()
-	companies_list[index].get_share_price_history_table()		# get info from company's history webpage
-	companies_list[index].format_graph_data()	
-	companies_list[index].plot_graph()
-
-	time.sleep(2)		# give the program time to breathe...
+	elif index == -1:
+		for key in companies_list:
+			companies_list[key].get_history_href()
+			companies_list[key].get_share_price_history_table()	
+			companies_list[key].format_graph_data()	
+			companies_list[key].plot_graph()
+			time.sleep(2)		# give the program time to breathe...
 
 def get_all_companies():
 	page = 1
@@ -56,17 +63,29 @@ def print_company_list():
 
 def main():
 	get_all_companies()
+	print("\nIrish Stock Exchange share price viewer\n")
 	print_company_list()
+	print()
+	company.instructions()
+
 	while True:
 
-		print("Enter company number between 1-56 inclusive...")
+		invalid_input = True
+		print(">>")
 		user_input = sys.stdin.readline()
 
-		if int(user_input) < 56 and int(user_input) > 0:
+		if user_input < "56" and user_input > "0":
 			crawler(int(user_input))
-
-
-	#crawler()
+			invalid_input = False
+		elif "<ALL>" in user_input:
+			crawler(-1)
+			invalid_input = False
+		elif "<COMPANIES>" in user_input:
+			print_company_list()
+			invalid_input = False
+		elif invalid_input:
+			print("\nInvalid Input...")
+			company.instructions()
 
 if __name__ == '__main__':
 	main() 

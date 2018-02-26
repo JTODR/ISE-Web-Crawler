@@ -62,9 +62,10 @@ class Company:
 		self.share_price_list = self.share_price_list[::-1]
 		self.market_capital_list = self.market_capital_list[::-1]
 
-		print("\n------------------------------------------------------")
+		print("\n")
+		print_breaker()
 		print("\t\t\t" + self.name)
-		print("------------------------------------------------------")
+		print_breaker()
 
 		print("DATE\t\tCLOSING PRICE (€)\tMARKET CAPITAL (MIL)")
 
@@ -97,3 +98,16 @@ class Company:
 		company_link = company_history.find('a')	
 		history_href = company_link.get('href')		# get the href for the "history" page of the company
 		self.history_url += history_href
+
+def print_breaker():
+	print("--------------------------------------------------------------------")
+
+def instructions():
+	print_breaker()
+	print("Instructions")
+	print_breaker()
+	print("<COMPANIES> - shows a list of all company names on the ISE")
+	print("<number from 1-56> - shows the share price history for that company")
+	print("<ALL> - shows every company share price sequentially")
+	print_breaker()
+	print("\n")
